@@ -1,23 +1,26 @@
 package aluno;
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 
 import organizador.IFileOrganizer;
-import organizador.OrganizadorSimples;
+import organizador.OrganizadorSequencial;
 
 
 public class AlunoTest {
 
 	public static void main(String[] args) throws IOException {
-		IFileOrganizer organizador = new OrganizadorSimples("altest.db");		
+		IFileOrganizer organizador = new OrganizadorSequencial("alunos.db");		
 		int mat = 1;
 		while(mat<=20){
 			Aluno aluno = new Aluno(mat, "Joao"+mat, "Rua A 4151", (short)10,	"M", "joao@mail.com");
 			organizador.addReg(aluno);
 			mat++;
 		}
+		
+		Aluno aluno = new Aluno(10, "Joao 10B", "Rua A 4151", (short)20,	"M", "joao@mail.com");
+		organizador.addReg(aluno);
+		Aluno aluno2 = new Aluno(12, "Joao 12B", "Rua A 4151", (short)20,	"M", "joao@mail.com");
+		organizador.addReg(aluno2);
+		
 		
 		System.out.println("Busca inicial...");
 		Aluno alunoManipulado = organizador.getReg(15);
