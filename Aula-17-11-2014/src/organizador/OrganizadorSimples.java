@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.List;
 
 import aluno.Aluno;
 
@@ -106,9 +105,4 @@ public class OrganizadorSimples implements IFileOrganizer{
 		}
 	}
 
-	@Override
-	public List<Aluno> listar() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }
