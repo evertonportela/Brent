@@ -1,6 +1,5 @@
 package aluno;
 import java.io.IOException;
-import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 
 import organizador.IFileOrganizer;
