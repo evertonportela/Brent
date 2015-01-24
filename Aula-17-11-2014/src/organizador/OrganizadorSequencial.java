@@ -49,11 +49,10 @@ public class OrganizadorSequencial implements IFileOrganizer {
 				canal.write(pAluno.getBuffer(), canal.size());
 			} else {
 				// Move todos os maiores para frente
-				for (long i = canal.size(); i >= position; i -= Aluno.LENGTH) {
+				for (long i = canal.size(); i > position; i -= Aluno.LENGTH) {
 					ByteBuffer buff = alocarAluno(i - Aluno.LENGTH,
 							Aluno.LENGTH);
 					canal.write(buff, i);
-					buff.flip();
 				}
 				// Escreve na posição correta
 				canal.write(pAluno.getBuffer(), position);
@@ -140,7 +139,6 @@ public class OrganizadorSequencial implements IFileOrganizer {
 			} else if (mat > pMatricula) {
 				break;
 			}
-			buff.flip();
 		}
 
 		return this.INEXISTENTE;
