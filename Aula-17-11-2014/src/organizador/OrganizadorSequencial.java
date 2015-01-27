@@ -96,8 +96,6 @@ public class OrganizadorSequencial implements IFileOrganizer {
 				// Move todos os maiores para frente caso não seja o ultimo
 				if (position + Aluno.LENGTH != (this.canal.size() - 1)) {
 					for (long i = position; i < canal.size() - Aluno.LENGTH; i += Aluno.LENGTH) {
-						long can = canal.size();
-						
 						//Pega o próximo aluno
 						buff = alocarAluno(i + Aluno.LENGTH, Aluno.LENGTH);
 						
@@ -129,7 +127,7 @@ public class OrganizadorSequencial implements IFileOrganizer {
 	 */
 	private long getPosition(int pMatricula) throws IOException {
 		long size = this.canal.size();
-
+		
 		// Coloca o canal na posição 0
 		for (long pos = 0; pos < size; pos += Aluno.LENGTH) {
 			ByteBuffer buff = alocarAluno(pos, 4);
@@ -171,8 +169,12 @@ public class OrganizadorSequencial implements IFileOrganizer {
 	 * @throws IOException
 	 */
 	private long getPositionMaior(int pMatricula) throws IOException {
+		// Verifica se é o maior
+		if(isMaior(pMatricula)){
+			return this.INEXISTENTE;
+		}
 		long size = this.canal.size();
-
+		
 		// Coloca o canal na posição 0
 		for (long pos = 0; pos < size; pos += Aluno.LENGTH) {
 			ByteBuffer buff = alocarAluno(pos, 4);
@@ -184,6 +186,28 @@ public class OrganizadorSequencial implements IFileOrganizer {
 		}
 
 		return this.INEXISTENTE;
+	}
+	
+	/**
+	 * Verifica se a matricula passada é a maior de todas
+	 * @param pmatricula
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean isMaior(int pmatricula) throws IOException{
+		
+		if(this.canal.size()==0){
+			return false;
+		}
+		
+		// Recupera apenas a Matricula do ultimo registro
+		ByteBuffer buff = alocarAluno(this.canal.size()-Aluno.LENGTH, 4);
+		
+		if(buff.getInt() <= pmatricula){
+			return true;
+		}
+		
+		return false;
 	}
 
 }
