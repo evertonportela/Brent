@@ -32,6 +32,11 @@ public class MigracaoBrent{
 
 				// Inserir no destino
 				org.addReg(aluno);
+
+				// posição de parada
+				if (pos>(10*Aluno.LENGTH)) {
+					break;
+				}
 			}
 			channelOrigem.close();
 			fileOrigem.close();
