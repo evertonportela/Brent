@@ -19,7 +19,7 @@ public class OrganizadorBrent implements IFileOrganizer{
 	/**
 	 *  valor primo que corresponde ao tamanho da tabela.
 	 */
-	private final int VALOR_PRIMO = 8000009;
+	private final long VALOR_PRIMO = 8000009;
 
 	/**
 	 * Valor estatico usado para indicar que a consulta não retornou registro
@@ -45,6 +45,11 @@ public class OrganizadorBrent implements IFileOrganizer{
 	
 	@Override
 	public boolean addReg(Aluno pAluno) {
+		try {
+			long pos = this.getPosition(pAluno.getMatricula());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return false;
 	}
 
@@ -64,8 +69,9 @@ public class OrganizadorBrent implements IFileOrganizer{
 	 * onde P é um valor primo que corresponde ao tamanho da tabela.
 	 * @param ppMatricula
 	 * @return
+	 * @throws IOException 
 	 */
-	private int getHash(int pMatricula){
+	private long getHash(int pMatricula) throws IOException{
 		return pMatricula % this.VALOR_PRIMO;
 	}
 	
@@ -76,8 +82,30 @@ public class OrganizadorBrent implements IFileOrganizer{
 	 * @param ppMatricula
 	 * @return
 	 */
-	private int getIncremento(int pMatricula){
+	private long getIncremento(int pMatricula){
 		return (pMatricula % (this.VALOR_PRIMO-2)) + 1;
+	}
+	
+	/**
+	 * Obtem a posição de um Aluno no arquivo
+	 * 
+	 * @param matricula
+	 *            Matricula do aluno pesquisado
+	 * @return pos posição do aluno no arquivo. Caso não seja encontrado aluno,
+	 *         retorna o valor estatico de INEXISTENTE (-1)
+	 * @throws IOException
+	 */
+	private long getPosition(int pMatricula) throws IOException {
+		// gera valor do hash
+		long hash = this.getHash(pMatricula);
+		
+		// aloca o aluno a partir da posição do hash
+		ByteBuffer buff = this.alocarAluno(hash, 4);
+
+		// deveria imprimir 0
+		System.out.println(buff.getInt());
+		
+		return 0;
 	}
 	
 	/**
