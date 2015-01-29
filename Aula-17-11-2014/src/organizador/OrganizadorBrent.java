@@ -9,15 +9,15 @@ import java.nio.channels.FileChannel;
 
 import aluno.Aluno;
 
-public class OrganizadorBrent implements IFileOrganizer{
+public class OrganizadorBrent implements IFileOrganizer {
 
 	/**
 	 * Canal de escrita e leitura no arquivo
 	 */
 	private FileChannel canal;
-	
+
 	/**
-	 *  valor primo que corresponde ao tamanho da tabela.
+	 * valor primo que corresponde ao tamanho da tabela.
 	 */
 	private final long VALOR_PRIMO = 8000009;
 
@@ -42,15 +42,51 @@ public class OrganizadorBrent implements IFileOrganizer{
 		this.canal = raf.getChannel();
 	}
 
-	
 	@Override
 	public boolean addReg(Aluno pAluno) {
+		long inicioLista = 0;
+		int saltosInserirNovoAluno = 0;
+		int saltosMoverAlunoExistente = 0;
+		long finalLista = 0;
+		// caso base quando Espaço vazio ou apagado
 		try {
-			long pos = this.getPosition(pAluno.getMatricula());
+			inicioLista = getHash(pAluno.getMatricula());
+			if (isPosicaoVazia(inicioLista)) {
+				// escreve o aluno na posição vazia
+				canal.write(pAluno.getBuffer(), inicioLista);
+			} else {
+				saltosInserirNovoAluno = custoInserirInicioLista(
+						pAluno.getMatricula(), inicioLista);
+				saltosMoverAlunoExistente = custoInserirFinalLista(
+						pAluno.getMatricula(), inicioLista);
+
+				// melhor inserir no inicio
+				if (saltosInserirNovoAluno <= saltosMoverAlunoExistente) {
+					// recuperar aluno a ser movido para o final da lista
+					Aluno alunoMover = new Aluno(alocarAluno(inicioLista,
+							Aluno.LENGTH));
+					// inseri na posição do aluno a ser movido
+					canal.write(pAluno.getBuffer(), inicioLista);
+					// calcula próxima posição vazia
+					finalLista = inicioLista
+							+ (saltosInserirNovoAluno * getIncremento(alunoMover
+									.getMatricula()));
+					// escreve alunoMover no fim da lista
+					canal.write(alunoMover.getBuffer(), finalLista);
+				}
+				// melhor inserir no fim
+				else {
+					finalLista = inicioLista + (saltosMoverAlunoExistente * getIncremento(pAluno.getMatricula()));
+					canal.write(pAluno.getBuffer(), finalLista);
+				}
+
+			}
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -62,52 +98,31 @@ public class OrganizadorBrent implements IFileOrganizer{
 	public Aluno delReg(int pMatricula) {
 		return null;
 	}
-	
+
 	/**
-	 * - Calcula o Hash da Matricula.
-	 * Hash[chave] = chave mod P 
-	 * onde P é um valor primo que corresponde ao tamanho da tabela.
-	 * @param ppMatricula
-	 * @return
-	 * @throws IOException 
-	 */
-	private long getHash(int pMatricula) throws IOException{
-		return pMatricula % this.VALOR_PRIMO;
-	}
-	
-	/**
-	 * - Calcula o Incremento da Matricula.
-	 *  Inc(chave) = (chave mod (P-2)) + 1 
-	 *  onde P é um valor primo que corresponde ao tamanho da tabela.
-	 * @param ppMatricula
-	 * @return
-	 */
-	private long getIncremento(int pMatricula){
-		return (pMatricula % (this.VALOR_PRIMO-2)) + 1;
-	}
-	
-	/**
-	 * Obtem a posição de um Aluno no arquivo
+	 * - Calcula o Hash da Matricula. Hash[chave] = chave mod P onde P é um
+	 * valor primo que corresponde ao tamanho da tabela.
 	 * 
-	 * @param matricula
-	 *            Matricula do aluno pesquisado
-	 * @return pos posição do aluno no arquivo. Caso não seja encontrado aluno,
-	 *         retorna o valor estatico de INEXISTENTE (-1)
+	 * @param ppMatricula
+	 * @return
 	 * @throws IOException
 	 */
-	private long getPosition(int pMatricula) throws IOException {
-		// gera valor do hash
-		long hash = this.getHash(pMatricula);
-		
-		// aloca o aluno a partir da posição do hash
-		ByteBuffer buff = this.alocarAluno(hash, 4);
-
-		// deveria imprimir 0
-		System.out.println(buff.getInt());
-		
-		return 0;
+	private long getHash(long pMatricula) {
+		return pMatricula % this.VALOR_PRIMO;
 	}
-	
+
+	/**
+	 * - Calcula o Incremento da Matricula. Inc(chave) = (chave mod (P-2)) + 1
+	 * onde P é um valor primo que corresponde ao tamanho da tabela.
+	 * 
+	 * @param ppMatricula
+	 * @return
+	 */
+	private long getIncremento(long pMatricula) {
+		return (pMatricula % (this.VALOR_PRIMO - 2)) + 1;
+	}
+
+
 	/**
 	 * Aloca uma instância de Aluno ou parte dos atributos deste em um
 	 * ByteBuffer para recuperar os valores gravados
@@ -120,10 +135,94 @@ public class OrganizadorBrent implements IFileOrganizer{
 	 * @return buff ByteBuffer
 	 * @throws IOException
 	 */
-	private ByteBuffer alocarAluno(long pos, int pBuffTamanho) throws IOException {
+	private ByteBuffer alocarAluno(long pos, int pBuffTamanho) {
 		ByteBuffer buff = ByteBuffer.allocate(pBuffTamanho);
-		this.canal.read(buff, pos);
+		try {
+			this.canal.read(buff, pos);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		buff.flip();
 		return buff;
 	}
+
+	/**
+	 * Calcula o custo de inserção no inicio da lista
+	 * 
+	 * @param pMatricula
+	 * @param pPosition
+	 * @return custo de inserção = quantidade de saltos + 1 (busca do 1o item)
+	 */
+	private int custoInserirInicioLista(int pMatricula, long pPosition) {
+		// recupera o aluno a ser removido.
+		// A quantidade de saltos será calculada em cima da matricula deste
+		Aluno alunoMover = new Aluno(alocarAluno(pPosition, Aluno.LENGTH));
+		int qtSaltos = saltosAteFinalLista(alunoMover.getMatricula(), pPosition);
+		// adiciona o custo da busca do registro inseido no inicio da lista
+		return qtSaltos + 1;
+
+	}
+
+	/**
+	 * Calcula o custo de inserção no final da lista
+	 * 
+	 * @param pMatricula
+	 * @param pPosition
+	 * @return custo de inserção = quantidade de saltos + 1 (busca do 1o item)
+	 */
+	private int custoInserirFinalLista(int pMatricula, long pPosition) {
+		int qtSaltos = saltosAteFinalLista(pMatricula, pPosition);
+		// adiciona o custo da busca do registro do inicio
+		return qtSaltos + 1;
+
+	}
+
+	/**
+	 * Calcula a quantidade de saltos até encontrar uma posição livre para
+	 * inserir
+	 * 
+	 * @param pMatricula
+	 * @param pPosition
+	 * @return quantidade de saltos até encontrar posição livre
+	 */
+	private int saltosAteFinalLista(int pMatricula, long pPosition) {
+		return saltosAteFinalLista(pMatricula, pPosition, 0);
+	}
+
+	/**
+	 * Calcula a quantidade de saltos até encontrar uma posição livre para
+	 * inserir
+	 * 
+	 * @param pMatricula
+	 * @param pPosition
+	 * @param qtSaltos
+	 * @return quantidade de saltos até encontrar posição livre
+	 */
+	private int saltosAteFinalLista(int pMatricula, long pPosition, int qtSaltos) {
+		while (!isPosicaoVazia(pPosition)) {
+			saltosAteFinalLista(pMatricula, pPosition
+					+ getIncremento(pMatricula), qtSaltos + 1);
+		}
+		return qtSaltos;
+	}
+
+	/**
+	 * Verifica se na posição passada existe um aluno válido ou se é vazia
+	 * 
+	 * @param pPosition
+	 *            posição do arquivo
+	 * @return True se for vazio False se existir aluno válido
+	 */
+	private boolean isPosicaoVazia(long pPosition) {
+		// Recupera o aluno existente na posição passada
+		Aluno alunoRecuperado = new Aluno(alocarAluno(pPosition, Aluno.LENGTH));
+		if (alunoRecuperado == null
+				|| alunoRecuperado.getMatricula() == INEXISTENTE) {
+			return true;
+		}
+
+		return false;
+	}
+
 }
