@@ -12,6 +12,16 @@ import aluno.Aluno;
 public class OrganizadorBrent implements IFileOrganizer {
 
 	/**
+	 * Quantidade de registros utilizados na migração
+	 */
+	private final long QTD_REGISTROS_MIGRACAO = 8000009;  
+
+	/**
+	 * Quantidade de registros utilizados na apresentação do trabalho
+	 */
+	private final long QTD_REGISTROS_APRESENTACAO = 11;  
+	
+	/**
 	 * Canal de escrita e leitura no arquivo
 	 */
 	private FileChannel canal;
@@ -19,7 +29,7 @@ public class OrganizadorBrent implements IFileOrganizer {
 	/**
 	 * valor primo que corresponde ao tamanho da tabela.
 	 */
-	private final long VALOR_PRIMO = 8000009;
+	private final long VALOR_PRIMO = QTD_REGISTROS_APRESENTACAO;
 
 	/**
 	 * Valor estatico usado para indicar que a consulta não retornou registro
@@ -81,8 +91,7 @@ public class OrganizadorBrent implements IFileOrganizer {
 				}
 
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -102,13 +111,14 @@ public class OrganizadorBrent implements IFileOrganizer {
 	/**
 	 * - Calcula o Hash da Matricula. Hash[chave] = chave mod P onde P é um
 	 * valor primo que corresponde ao tamanho da tabela.
-	 * 
 	 * @param ppMatricula
 	 * @return
 	 * @throws IOException
 	 */
 	private long getHash(long pMatricula) {
-		return pMatricula % this.VALOR_PRIMO;
+		//- Multiplca pela quantidade de bytes que o aluno possui para
+		//obter a real posição do aluno no array
+		return (pMatricula % this.VALOR_PRIMO) * Aluno.LENGTH;
 	}
 
 	/**
@@ -215,10 +225,9 @@ public class OrganizadorBrent implements IFileOrganizer {
 	 * @return True se for vazio False se existir aluno válido
 	 */
 	private boolean isPosicaoVazia(long pPosition) {
-		// Recupera o aluno existente na posição passada
-		Aluno alunoRecuperado = new Aluno(alocarAluno(pPosition, Aluno.LENGTH));
-		if (alunoRecuperado == null
-				|| alunoRecuperado.getMatricula() == INEXISTENTE) {
+		// Recupera a matricula do aluno existente na posição passada
+		int matriculaAluno = alocarAluno(pPosition, 4).getInt();
+		if (matriculaAluno == 0 || matriculaAluno == INEXISTENTE) {
 			return true;
 		}
 
