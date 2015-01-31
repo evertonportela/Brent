@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 import aluno.Aluno;
 
 public class OrganizadorBrent implements IFileOrganizer {
-
+	
 	/**
 	 * Quantidade de registros utilizados na migração
 	 */
@@ -57,7 +57,7 @@ public class OrganizadorBrent implements IFileOrganizer {
 		long inicioLista = 0;
 		int saltosInserirNovoAluno = 0;
 		int saltosMoverAlunoExistente = 0;
-		long finalLista = 0;
+		long finalSaltos = 0;
 		// caso base quando Espaço vazio ou apagado
 		try {
 			inicioLista = getHash(pAluno.getMatricula());
@@ -73,36 +73,27 @@ public class OrganizadorBrent implements IFileOrganizer {
 				saltosMoverAlunoExistente = saltosAteNovaPosicao(inicioLista, 0,
 						this.getIncremento(matriculaAlunoPosAtual));
 
-				if (saltosInserirNovoAluno < saltosMoverAlunoExistente) {
-					// verificar se o aluno que está no posição pertence a ela ou se foi movido
-					if(inicioLista == this.getHash(matriculaAlunoPosAtual)){
-
-						// esta é a posição inicial então inseri o novo no fim dos saltos
-						finalLista = inicioLista
-								+ ((saltosInserirNovoAluno + 1) * getIncremento(pAluno
-										.getMatricula()));
-						canal.write(pAluno.getBuffer(), finalLista);
-					}else{
-						// deve calcular a quantidade de saltos desde a posição real do aluno
-						
-					}
+				// Melhor não mover o registro atual
+				if (saltosInserirNovoAluno <= saltosMoverAlunoExistente) {
+					finalSaltos = calcularPosicao(pAluno, inicioLista,
+							saltosInserirNovoAluno);
+										
+					canal.write(pAluno.getBuffer(), finalSaltos);
 				}
 				else {
-					// recuperar aluno a ser movido para nova posição
+					// Inseri o novo registro no lugar do atual
+					//e move o outro para uma nova posição
 					Aluno alunoMover = new Aluno(alocarAluno(inicioLista,
 							Aluno.LENGTH));
 					
 					// inseri na posição do aluno a ser movido
 					canal.write(pAluno.getBuffer(), inicioLista);
 					
-					// calcula próxima posição vazia
-					finalLista = inicioLista
-							+ ((saltosMoverAlunoExistente+1) // Soma para obter posição real 
-									* getIncremento(alunoMover
-									.getMatricula()));
-					
+					finalSaltos = calcularPosicao(alunoMover, inicioLista,
+							saltosMoverAlunoExistente);
+
 					// escreve alunoMover na nova posição
-					canal.write(alunoMover.getBuffer(), finalLista);
+					canal.write(alunoMover.getBuffer(), finalSaltos);
 				}
 			}
 		} catch (Exception e) {
@@ -112,14 +103,84 @@ public class OrganizadorBrent implements IFileOrganizer {
 		return true;
 	}
 
+	/**
+	 * - Calcula a posição que o registro será inserido de 
+	 * acordo com o incremento, a quantidade de saltos e a posição inial.
+	 * @param pAluno
+	 * @param inicioLista
+	 * @param saltosInserirNovoAluno
+	 * @return
+	 * @throws IOException
+	 */
+	private long calcularPosicao(Aluno pAluno, long inicioLista,
+			int saltosInserirNovoAluno) throws IOException {
+		long finalSaltos;
+		finalSaltos = inicioLista
+				+ (saltosInserirNovoAluno * getIncremento(pAluno
+						.getMatricula()));
+		
+		// Verifica se a posição é maior que o canal
+		finalSaltos = isOverFlow(finalSaltos);
+		
+		return finalSaltos;
+	}
+	
+	/**
+	 * - Se a posição for maior que o canal retorna:
+	 * 	retorna o resto da divisão da posição pelo tamanho do canal
+	 * @param pPosition
+	 * @return
+	 * @throws IOException
+	 */
+	private long isOverFlow(long pPosition) throws IOException{
+		if(pPosition >= canal.size()){
+			return pPosition % canal.size();
+		}
+		
+		return pPosition;
+	}
+
 	@Override
 	public Aluno getReg(int pMatricula) {
-		return null;
+		Aluno aluno = null;
+		try {
+			// Recupera a posição
+			long position = this.getPosition(pMatricula);
+			if(position == INEXISTENTE){
+				return aluno;
+			}
+			
+			// Aloca o aluno
+			ByteBuffer buff = alocarAluno(position, Aluno.LENGTH);
+			aluno = new Aluno(buff);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return aluno;
 	}
 
 	@Override
 	public Aluno delReg(int pMatricula) {
-		return null;
+		Aluno aluno = null;
+		try {
+			// recupera posição
+			long position = getPosition(pMatricula);
+			if(position==INEXISTENTE){
+				return aluno;
+			}
+			
+			// aloca registro
+			aluno = new Aluno(alocarAluno(position, Aluno.LENGTH));
+			
+			// escreve um aluno vazio na posição recebida
+			Aluno alunoVazio = new Aluno((int) INEXISTENTE, "", "", (short) 0, "", "");
+			this.canal.write(alunoVazio.getBuffer(), position);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return aluno;
 	}
 
 	/**
@@ -143,7 +204,11 @@ public class OrganizadorBrent implements IFileOrganizer {
 	 * @return
 	 */
 	private long getIncremento(long pMatricula) {
-		return ((pMatricula % (this.VALOR_PRIMO - 2)) + 1) * Aluno.LENGTH;
+		// usado na migração
+		//return ((pMatricula % (this.VALOR_PRIMO - 2)) + 1) * Aluno.LENGTH;
+		
+		// usado na apresentação
+		return ((pMatricula/QTD_REGISTROS_APRESENTACAO) % QTD_REGISTROS_APRESENTACAO) * Aluno.LENGTH;
 	}
 
 
@@ -180,12 +245,55 @@ public class OrganizadorBrent implements IFileOrganizer {
 	 * @param qtSaltos
 	 * @param pIncremento 
 	 * @return quantidade de saltos até encontrar posição livre
+	 * @throws IOException 
 	 */
-	private int saltosAteNovaPosicao(long pPosition, int qtSaltos, long pIncremento) {
-		if(isPosicaoVazia(pPosition)){
+	private int saltosAteNovaPosicao(long pPosition, int qtSaltos, long pIncremento) throws IOException {
+		// atulisado para quando o salto voltar ao inicio da lista
+		long position = pPosition;
+		if(pPosition > (canal.size()-1)){
+			position = pPosition - canal.size();
+		}
+
+		if(isPosicaoVazia(position)){
 			return qtSaltos;
 		}else{
-			return saltosAteNovaPosicao(pPosition + pIncremento, qtSaltos + 1, pIncremento);
+			return saltosAteNovaPosicao(position + pIncremento, qtSaltos + 1, pIncremento);
+		}
+	}
+	
+	/**
+	 * - Chama a recursão
+	 * @param pMatricula
+	 * @return
+	 * @throws IOException
+	 */
+	private long getPosition(int pMatricula) throws IOException {
+		return getPosition(pMatricula, getHash(pMatricula),
+				getIncremento(pMatricula));
+	}
+	
+	/**
+	 * - Encontra a posição da matricula passada
+	 * @param pMatricula
+	 * @param pPosition
+	 * @param pIncremento
+	 * @return
+	 * @throws IOException
+	 */
+	private long getPosition(int pMatricula, long pPosition, long pIncremento) throws IOException {
+		// atulisado para quando o salto voltar ao inicio da lista
+		long positionAtual = pPosition;
+		if(pPosition >= canal.size()){
+			positionAtual = pPosition - canal.size();
+		}
+		
+		int matriculaAluno = alocarAluno(positionAtual, Aluno.MATRICULA_LENGTH).getInt();
+		if (matriculaAluno == 0) {
+			return INEXISTENTE;
+		}else if(matriculaAluno == pMatricula){
+			return positionAtual;
+		}else{
+			return getPosition(pMatricula, positionAtual + pIncremento, pIncremento);
 		}
 	}
 
