@@ -11,6 +11,7 @@ public class Aluno {
 	private String sexo; //1byte
 	private String email; //40bytes
 	public static final int LENGTH = 157;
+	public static final int MATRICULA_LENGTH = 4;
 	
 	//Construtor simples
 	public Aluno(int matricula, 
