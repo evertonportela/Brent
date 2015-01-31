@@ -16,15 +16,29 @@ public class ApresentacaoBrent {
 					new OrganizadorBrent(GerarArquivo.NM_ARQUIVO_APRESENTACAO);
 			
 			// Inseri na sequencia do slide passado em sala
-			/*organizadorBrent.addReg(new Aluno(27, "Aluno", "Rua 10",
-					(short) 18, "M", "aluno@ufs.br"));
+			organizadorBrent.addReg(new Aluno(27, "Aluno", "Rua 10",
+					(short) 20, "M", "aluno@ufs.br"));
 
 			organizadorBrent.addReg(new Aluno(18, "Aluno", "Rua 10",
-					(short) 18, "M", "aluno@ufs.br"));
+					(short) 20, "M", "aluno@ufs.br"));
 			
 			organizadorBrent.addReg(new Aluno(29, "Aluno "+29, "Rua",
-					(short) 18, "M", "mail"));*/
+					(short) 20, "M", "mail"));
+
+			organizadorBrent.addReg(new Aluno(28, "Aluno "+28, "Rua",
+					(short) 20, "M", "mail"));
 			
+			organizadorBrent.addReg(new Aluno(39, "Aluno "+39, "Rua",
+					(short) 20, "M", "mail"));
+
+			organizadorBrent.addReg(new Aluno(13, "Aluno "+13, "Rua",
+					(short) 20, "M", "mail"));
+			
+			organizadorBrent.addReg(new Aluno(16, "Aluno "+16, "Rua",
+			(short) 20, "M", "mail"));
+
+			//organizadorBrent.delReg(16);
+			//System.out.println(organizadorBrent.getReg(27));
 			
 			// varre o arquivo e mostra as posições
 			File fOrigem = new File(GerarArquivo.NM_ARQUIVO_APRESENTACAO);
