@@ -11,8 +11,11 @@ import organizador.OrganizadorBrent;
 import aluno.Aluno;
 
 public class MigracaoBrent{
+	
+	public static int contador = 0;
 
 	public static void main(String[] args){
+		Acompanhamento acompanhamento = new Acompanhamento();
 		try {
 			File fOrigem = new File("enem_aleat.db");
 			RandomAccessFile fileOrigem;
@@ -21,8 +24,10 @@ public class MigracaoBrent{
 
 			IFileOrganizer org = new OrganizadorBrent("enem_brent.db");
 
+			acompanhamento.start();
+
 			// Ler cada aluno do arquivo de origem e inserir no de destino
-			for (long pos=0; pos < channelOrigem.size(); pos +=Aluno.LENGTH)  {
+			for (int pos=0; pos < channelOrigem.size(); pos +=Aluno.LENGTH)  {
 				// Ler da origem
 				ByteBuffer buff = ByteBuffer.allocate(Aluno.LENGTH);
 				channelOrigem.read(buff, pos);
@@ -32,11 +37,14 @@ public class MigracaoBrent{
 
 				// Inserir no destino
 				org.addReg(aluno);
+				contador++;
 			}
 			channelOrigem.close();
 			fileOrigem.close();
+			acompanhamento.stop();
 		} catch (Exception e) {
 			e.printStackTrace();
+			acompanhamento.stop();
 		}
 	}
 }
