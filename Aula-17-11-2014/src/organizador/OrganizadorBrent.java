@@ -29,7 +29,8 @@ public class OrganizadorBrent implements IFileOrganizer {
 	/**
 	 * valor primo que corresponde ao tamanho da tabela.
 	 */
-	private final long VALOR_PRIMO = QTD_REGISTROS_APRESENTACAO;
+	//private final long VALOR_PRIMO = QTD_REGISTROS_APRESENTACAO;
+	private final long VALOR_PRIMO = QTD_REGISTROS_MIGRACAO;
 
 	/**
 	 * Valor estatico usado para indicar que a consulta não retornou registro
@@ -205,10 +206,10 @@ public class OrganizadorBrent implements IFileOrganizer {
 	 */
 	private long getIncremento(long pMatricula) {
 		// usado na migração
-		//return ((pMatricula % (this.VALOR_PRIMO - 2)) + 1) * Aluno.LENGTH;
+		return ((pMatricula % (this.VALOR_PRIMO - 2)) + 1) * Aluno.LENGTH;
 		
 		// usado na apresentação
-		return ((pMatricula/QTD_REGISTROS_APRESENTACAO) % QTD_REGISTROS_APRESENTACAO) * Aluno.LENGTH;
+		//return ((pMatricula/QTD_REGISTROS_APRESENTACAO) % QTD_REGISTROS_APRESENTACAO) * Aluno.LENGTH;
 	}
 
 
